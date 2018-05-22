@@ -2,7 +2,7 @@
 ## Integrate objects from multiple jobs
 echo "Integrating results into a single .pkl file..."
 script_dir="./"
-in_dir="../../../NMF/Dropseq/Combined_stages/DS_ZF90_B/"
+in_dir="../example_results/"
 out_dir="${in_dir}/integrated/"
 py_script="${script_dir}/integrate_objs.py"
 

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import argparse
+import sys
+sys.path.append("../")
 import nmf_fxn
 import ast
 import copy

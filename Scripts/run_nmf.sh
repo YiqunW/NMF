@@ -1,8 +1,8 @@
 #!/bin/bash 
 script_dir="./" # directory of run_nmf.py
-data_dir="./" # directory of input data
+data_dir="../" # directory of input data
 data_file="example_data.csv" # file name of input data
-out_dir="./example_results/" # output directory
+out_dir="../example_results/" # output directory
 py_script="${script_dir}/run_nmf.py"
 
 expr_f="${data_dir}${data_file}"
