@@ -25,9 +25,9 @@ import scipy.spatial.distance as ssd
 def read_data(file_path):
     """ 
     Parameters:
-        file_path --> the path of the input file as a string. Input file is presumed to be tab delimited expression table, with the first column being gene names, and first row being cell names.
+        file_path --> the path of the input file as a string. Input file is presumed to be tab (.txt) or coma (.csv) delimited expression table, with the column names being gene names, and row names being cell names.
     Returns:
-        A pandas DataFrame.
+        A pandas DataFrame with cell names set as column labels and gene names set as row index.
     """
     if type(file_path) is str:
         if file_path.endswith(".csv"):
@@ -78,10 +78,10 @@ def load_obj(name):
     
 
 ## Define a function which, after nmf run, prints out the top n genes that defines each gene module
-def print_top_genes(G, n_top_genes = 30,component = None, prt= True, save_tbl=False):
+def print_top_genes(G, n_top_genes = 30,component = None, prt= False, save_tbl=False):
     """
     Parameters:
-        G --> The G matrix resulted from NMF run, in format of a pandas DataFrame, with gene names as the index.
+        G --> The G matrix (number of genes by K) resulted from NMF run, in format of a pandas DataFrame, with gene names as the index.
         n_top_genes --> the number of top ranking genes to display or save.
         component --> the module indices to display or save. If None, all modules will be included.
         prt --> whether to print the results in the environment in addition to returning the resultant table.
@@ -265,7 +265,7 @@ def run_nmf(data_frame, n_groups, rand_state=None, alpha=.25, l1=.5, max_iter=25
             X=X_arr[:,cell_use]
         if verbose:
             print("Running rep"+str(i)+":")
-        nmf = NMF(n_components=n_groups, random_state=rand_state[i], alpha=alpha, l1_ratio=l1,max_iter=max_iter,tol=tol).fit(X)
+        nmf = NMF(n_components=n_groups, random_state=rand_state[i], alpha=alpha, l1_ratio=l1,max_iter=max_iter,tol=tol, init=init).fit(X)
         C=nmf.components_ ## n_groups X num_cells
         err=nmf.reconstruction_err_
         n_iter=nmf.n_iter_
@@ -729,12 +729,14 @@ class nmf_reps:
             pp.close()
         return
 
-    def rebuild_hex(self, G, C, data_use="scaled", fg_sz=10, min_val=0.1, save=False,title=None):
+    def rebuild_hex_class(self, k, rep, data_use="scaled", fg_sz=10, min_val=0.1, save=False,title=None):
         """
         Parameters:
             data_use --> "raw", "scaled", or "permuted"
         """
         ## can take both np.array and pd.df as input
+        G=self.results["K="+str(k)][rep]['G']
+        C=self.results["K="+str(k)][rep]['C']
         re_const=np.dot(np.array(G),np.array(C))
         real_data=np.array(self.data[data_use])
         re_const_arr=re_const.flatten('C')
@@ -905,7 +907,28 @@ def stability_tbl(results,Ks=None,stats=["inconsistency_G","inconsistency_C","co
             stats_tbl.loc["cophenetic_C"]=np.array(cophe)
     return stats_tbl
 
-
+def rebuild_hex(G, C, data_use, fg_sz=10, min_val=0.1, save=False,title=None):
+    """
+    Parameters:
+        data_use --> "raw", "scaled", or "permuted"
+    """
+    ## can take both np.array and pd.df as input
+    re_const=np.dot(np.array(G),np.array(C))
+    real_data=np.array(data_use)
+    re_const_arr=re_const.flatten('C')
+    real_data_arr=real_data.flatten('C')
+    ind_use=np.intersect1d(np.where(re_const_arr>=min_val)[0],np.where(real_data_arr>=min_val)[0])
+    hexplot = sns.jointplot(real_data_arr[ind_use],re_const_arr[ind_use],kind="hex", size=fg_sz)
+    hexplot.set_axis_labels(xlabel='Real Data', ylabel='Reconstructed Data')
+    if title is not None:
+        plt.title(title)
+    cax = hexplot.fig.add_axes([1, 0.25, 0.04, 0.5])# size and placement of bar [left, bottom, width, height]
+    plt.colorbar(cax=cax)
+    if save:
+        pp = PdfPages(save+'.pdf')
+        pp.savefig()
+        pp.close()
+    return
 
 # def extract_err(results,krange=range(2,21),extr='err',mean_only=False):
 #     """
@@ -986,26 +1009,6 @@ def stability_tbl(results,Ks=None,stats=["inconsistency_G","inconsistency_C","co
 #         plt.ylabel('Actual # Iteration',fontsize=16)
 #     if perm_err is not None:
 #         plt.legend(handles=[plt1,plt2],frameon=False)
-#     if save:
-#         pp = PdfPages(save+'.pdf')
-#         pp.savefig()
-#         pp.close()
-#     return
-
-## Define a function that plot the reconstructed matrix against the real matrix as a hexbin plot
-# def rebuild_hex(re_const, real_data, fg_sz=10, min_val=0.1, save=False,title=None):
-#     ## can take both np.array and pd.df as input
-#     re_const=np.array(re_const)
-#     real_data=np.array(real_data)
-#     re_const_arr=re_const.flatten('C')
-#     real_data_arr=real_data.flatten('C')
-#     ind_use=np.intersect1d(np.where(re_const_arr>=min_val)[0],np.where(real_data_arr>=min_val)[0])
-#     hexplot = sns.jointplot(real_data_arr[ind_use],re_const_arr[ind_use],kind="hex", size=fg_sz)
-#     hexplot.set_axis_labels(xlabel='Real Data', ylabel='Reconstructed Data')
-#     if title is not None:
-#         plt.title(title)
-#     cax = hexplot.fig.add_axes([1, 0.25, 0.04, 0.5])# size and placement of bar [left, bottom, width, height]
-#     plt.colorbar(cax=cax)
 #     if save:
 #         pp = PdfPages(save+'.pdf')
 #         pp.savefig()
