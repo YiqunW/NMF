@@ -14,4 +14,6 @@
 
 [sklearn.sklearn.decomposition.NMF](http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.NMF.html) is called to perform NMF.
 
+`nmf_fxn.py` can be downloaded and imported in python as a module. 
+
 Please see `Examples for using NMF functions.ipynb` for usages.
