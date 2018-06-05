@@ -132,19 +132,18 @@ else:
     print("NMF runs finished. Results are stored in run_nmf.results.")
 
 file_name = out_dir+"/Results_obj.pkl"
-expand=0
-if os.path.isfile(file_name):
-    expand = 1
-    while True:
-        expand += 1
-        new_file_name = file_name.split(".pkl")[0] + "(" + str(expand) + ")" + ".pkl"
-        if os.path.isfile(new_file_name):
-            continue
-        else:
-            file_name = new_file_name
-            break
+#expand = randint(1,999999)
+#file_name = file_name.split(".pkl")[0] + "_" + str(expand) + ".pkl"
+while True:
+    expand = randint(1,999999)
+    new_file_name = file_name.split(".pkl")[0] + "_" + str(expand) + ".pkl"
+    if os.path.isfile(new_file_name):
+        continue
+    else:
+        file_name = new_file_name
+        break
 
-print("Pickling the result object "+file_name+"...")
+print("Pickling the result object as "+file_name+"...")
 nmf_fxn.save_obj(run_nmf,file_name)
 
 if analyze:
