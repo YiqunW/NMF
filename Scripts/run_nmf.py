@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 import os
 import seaborn as sns
+from random import *
 
 ### Take arguments from command line --- 
 if __name__ == '__main__':
