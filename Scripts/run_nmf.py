@@ -109,17 +109,33 @@ else:
 print("K values determined:")
 print(list(ks))
 
-print("Setting parameters for class nmf_reps...")
-run_nmf.set_param(scale=scale, Ks=ks, rand_state=rand_state, alpha=alpha, l1=l1, max_iter=max_iter, tol=tol, rep=rep, sub=sub, init=init,verbose=True, permute=perm)
-
+print("Reading data...")
 data = nmf_fxn.read_data(in_file)
 if data.shape[0]*data.shape[1]==0:
     data=pd.read_csv(in_file,index_col=0)
 print("Expression data read. Dataset dimensions:")
 print(data.shape)
 
+if type(perm) is str:
+    data_perm = nmf_fxn.read_data(perm)
+    if data_perm.shape[0]*data_perm.shape[1]==0:
+        data_perm=pd.read_csv(perm,index_col=0)
+    perm = True
+    set_perm=True
+    print("Permuted data read. Dataset dimensions:")
+    print(data_perm.shape)
+else:
+    set_perm=False
+
+print("Setting parameters for class nmf_reps...")
+
+run_nmf.set_param(scale=scale, Ks=ks, rand_state=rand_state, alpha=alpha, l1=l1, max_iter=max_iter, tol=tol, rep=rep, sub=sub, init=init,verbose=True, permute=perm)
+
 print("Setting datasets for class nmf_reps...")
-run_nmf.set_data(data)
+if set_perm:
+    run_nmf.set_data(data, permuted=data_perm)
+else:
+    run_nmf.set_data(data)
 
 print("Running nmf...")
 if prt_top_genes:
