@@ -30,9 +30,16 @@ This script will also generate an R object that contains the factor matrices and
 
 To test this script and reproduce the `example_results_new` folder and its content, follow these 4 steps: 
 1. Type the following command in terminal:
-    ```bash run_nmf.sh > example_run_log_new.txt```
+    ```
+    bash run_nmf.sh > example_run_log_new.txt
+    ```
 2. Modify `run_nmf.sh` such that `out_dir="../example_results_new/"`, and `krange="[11,20]"`. 
 3. Run the modified script by:
-    ```bash run_nmf.sh > example_run_log_new2.txt```
+    ```
+    bash run_nmf.sh > example_run_log_new2.txt
+    ```
 4. After both runs are finished, integrate results from both runs by:
-	```bash integrate_and_output.sh > run_log_integ.txt```
+	```
+	bash integrate_and_output.sh > run_log_integ.txt
+	```
+	
