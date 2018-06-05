@@ -292,7 +292,8 @@ def calc_consens(result_k,scl=True,M='C'):
     Returns:
         A consensus matrix in form of a numpy matrix.
     """
-    result_=copy.deepcopy(result_k)
+    #result_=copy.deepcopy(result_k)
+    result_=result_k
     reps=[i for i in result_.keys() if i.startswith('rep')]
     num_rep=len(reps)
     con_sum=0
@@ -315,13 +316,12 @@ def calc_consens(result_k,scl=True,M='C'):
         print('building connectivity matrix for '+i+'...')
         if M=='C':
             if not sub_spl:
-                C=result_[i]['C']
+                C=np.array(result_[i]['C'])
             else:
-                C=result_[i]['C'][cells]
-            C=np.array(C)
+                C=np.array(result_[i]['C'][cells])
         elif M=='G':
-            G=result_[i]['G']
-            C=np.array(G.T)
+            G=np.array(result_[i]['G'])
+            C=G.T
         else:
             print('Error: invalid input for M. Use either \'C\' or \'G\'.')
         if scl:
@@ -329,13 +329,8 @@ def calc_consens(result_k,scl=True,M='C'):
             C=C_fit.T
         ## look for the maximum in each column (only want the index)
         group=C.argmax(axis=0) ## an array of #cells integers, each specifies the class the particular cell is in
-        ## build a connectivity matrix
-        #C1=np.array([group,]*len(group))
-        #C2=np.array(C1).T
         C1, C2 = np.meshgrid(group,group)
-        #conn=np.array(C1==C2,dtype=int)
         con_sum+=np.array(C1==C2,dtype=int)
-        #con_sum+=conn
     con=con_sum/num_rep
     con=con.astype('float32')
     return con ## Returns a consensus matrix over all the replications for K
@@ -396,7 +391,7 @@ def consis_plt(con,fg_sz=[10,4],ylim1=None, ylim2=None, save=False,plot=False,lo
             pp.close()
     return mean_dev
 
-def calc_cophenet(con):
+def calc_cophenet(con,method='ward'):
     """ 
     Parameters:
         con --> a consensus matrix (such as output from calc_consens).
@@ -405,7 +400,7 @@ def calc_cophenet(con):
     """
     dis=1-con
     distArray = ssd.squareform(dis)
-    Z=scipy.cluster.hierarchy.linkage(distArray,method='ward')
+    Z=scipy.cluster.hierarchy.linkage(distArray,method=method)
     c=scipy.cluster.hierarchy.cophenet(Z,distArray)
     return c[0]
 
@@ -467,9 +462,14 @@ class nmf_reps:
         """
         pass
 
-    def set_param(self, scale="median", Ks=range(10,20), rand_state=None, alpha=.25, l1=.5, max_iter=25000, tol=1e-7, rep=3, sub=None, init=None,verbose=True, permute=False):
+    def set_param(self, scale="median", Ks=range(10,20), rep=3, rand_state=None, alpha=.25, l1=.5, max_iter=25000, tol=1e-7, sub=None, init=None,verbose=True, permute=False):
         """
-        Sets paramaters
+        Sets paramaters.
+        Parameters:
+        scale --> whether to scale the expression matrix. Can be False, "median" or "max".
+        Ks --> the range of K (ranks) to run NMF for. Can be list, np.array, or range of integers.
+        rep --> an integer to specify how many repeated runs of NMF to perform for each K value specified in Ks.
+        permute --> True or False. Whether to automatically generate a permuted dataset when set_data is called.
         """
         Params = AttributeDict()
         Params.rand_state = rand_state
@@ -655,7 +655,7 @@ class nmf_reps:
         if Ks is None:
             Params=self.Params
             Ks=Params.Ks
-        err_tbl=pd.DataFrame(columns=Ks,dtype="float")
+        err_tbl=pd.DataFrame(columns=sorted(Ks),dtype="float")
         if permuted:
             results_=self.permuted_results
         else:
@@ -870,6 +870,7 @@ def stability_tbl(results,Ks=None,stats=["inconsistency_G","inconsistency_C","co
     if Ks is None:
         Ks_key=[i for i in results.keys() if i.startswith('K=')]
         Ks=[int(i.split("=")[1]) for i in Ks_key]
+        Ks=sorted(Ks)
     stats_tbl=pd.DataFrame(columns=Ks,dtype="float",index=stats)
     if "inconsistency_G" in stats or "cophenetic_G" in stats:
         consis=[]
@@ -930,167 +931,5 @@ def rebuild_hex(G, C, data_use, fg_sz=10, min_val=0.1, save=False,title=None):
         pp.close()
     return
 
-# def extract_err(results,krange=range(2,21),extr='err',mean_only=False):
-#     """
-#     If extr='n_iter', the function will extract the n_iter values instead of err
-#     Input results is a dictionary that contains results for multiple K's
-#     If mean_only is False, the function will return a dataframe with a column of err/n_iter values for each K,
-#     in addition to the mean error dataframe. This requires each K has the same replication number.
-#     """
-#     err_dic={}
-#     results_=copy.deepcopy(results)
-#     mean_err=[]
-#     if mean_only==False:
-#         err_df=pd.DataFrame()
-#     for k in krange:
-#         df_k=results_[str(k)+'groups']
-#         num_rep=sum([i.startswith('rep') for i in df_k.keys()])
-#         err_k=0.0
-#         err_df_k=[]
-#         for rep in range(0,num_rep):
-#             df_kr=df_k['rep'+str(rep)]
-#             err_k += df_kr[extr]
-#             err_df_k.append(df_kr[extr])
-#         mean_err.append(err_k/float(num_rep))
-#         if mean_only==False:
-#             err_df['K='+str(k)]=err_df_k
-#     err_dic['Mean '+extr]=pd.DataFrame(np.array([list(krange),mean_err]),index=['K','Mean '+extr])
-#     if mean_only==False:
-#         err_dic['All '+extr]=err_df
-#     return err_dic
-
-
-## Define a function that plots errs or n_iters for expression matrix and the random matrix
-# def err_plt(err, perm_err=None, fg_sz = [7,5], xtick_sz=14, save = False, ttl = False, data='err'):
-#     """
-#     err and perm_err are output from extract_err function
-#     If want to plot n_iter, need to change data to 'n_iter'.
-#     """
-#     plt.rcParams["figure.figsize"] = fg_sz
-#     plt.rcParams['xtick.labelsize'] = xtick_sz
-    
-#     mean_err=err['Mean '+data].loc['Mean '+data]
-#     mean_err=np.array(mean_err)
-#     num_rep=np.array(err['All '+data]).shape[0]
-#     if perm_err is not None:
-#         perm_mean_err=perm_err['Mean '+data].loc['Mean '+data]
-#         perm_mean_err=np.array(perm_mean_err)
-#         perm_num_rep=np.array(perm_err['All '+data]).shape[0]
-    
-#     Xs=[]
-#     k=[]
-#     for i in err['All '+data]:
-#         x=int(i.split('=')[-1])
-#         k.append(x)
-#         Xs.append(np.repeat(x,num_rep))
-#     ks=np.array(Xs).flatten('C')
-#     err=np.array(err['All '+data]).flatten('F')
-#     plt.figure()
-#     plt1, =plt.plot(k,mean_err,label='Expression Data',color='firebrick',linewidth=2,linestyle='--')
-#     plt.plot(ks,err,'o',mec="firebrick",color='firebrick')
-    
-#     if perm_err is not None:
-#         Xs=[]
-#         k=[]
-#         for i in perm_err['All '+data]:
-#             x=int(i.split('=')[-1])
-#             k.append(x)
-#             Xs.append(np.repeat(x,num_rep))
-#         ks=np.array(Xs).flatten('C')
-#         perm_err=np.array(perm_err['All '+data]).flatten('F')
-#         plt2, =plt.plot(k,perm_mean_err,label='Randomly Permuted Data',color='silver',linewidth=2,linestyle='--')
-#         plt.plot(ks,perm_err,'o',mec="silver",color='silver')
-#     if ttl:
-#         plt.title(ttl,fontsize=16)
-#     plt.xlabel('K',fontsize=18)
-#     if data == 'err':
-#         plt.ylabel('Reconstruction Error',fontsize=16)
-#     elif data == 'n_iter':
-#         plt.ylabel('Actual # Iteration',fontsize=16)
-#     if perm_err is not None:
-#         plt.legend(handles=[plt1,plt2],frameon=False)
-#     if save:
-#         pp = PdfPages(save+'.pdf')
-#         pp.savefig()
-#         pp.close()
-#     return
-
-
-## Define a function that calculates the average G and C matrices for a specific K of choice
-## only works well on highly consistent results
-# def mean_GC(results,rep=None,st=1,p_val=False):
-#     """
-#     results must be a dictionary with replicates as keys
-#     If st=1, the G and C matrices from the first replicate will be used as reference.
-#     """
-#     results_=copy.deepcopy(results)
-#     G0=results_['rep'+str(st-1)]['G']
-#     C0=results_['rep'+str(st-1)]['C']
-#     if rep is None:
-#         rep=sum([i.startswith('rep') for i in results_.keys()])
-#     rep=range(0,rep)
-#     Gf=np.array(G0)
-#     Cf=np.array(C0)
-#     tot=len(rep)
-#     for i in rep:  ## calculate correlation matrices for each rep with the rep0 results
-#         if i != st-1:
-#             rslt=results_['rep'+str(i)]
-#             G=np.array(rslt['G'])
-#             C=np.array(rslt['C'])
-#             num_g=G.shape[1]
-#             G_corr=np.zeros((num_g,num_g))
-#             G_p=np.zeros((num_g,num_g))
-#             C_corr=np.zeros((num_g,num_g))
-#             C_p=np.zeros((num_g,num_g))
-#             for j in range(0,num_g):
-#                 for k in range(0,num_g): ## calculate correlations of one group in rep(i) with all groups in the rep0
-#                     corrG=pearsonr(G[:,j],np.array(G0)[:,k])
-#                     G_corr[j,k]=corrG[0]
-#                     G_p[j,k]=corrG[1]
-#                     corrC=pearsonr(C[j,:],np.array(C0)[k,:])
-#                     C_corr[j,k]=corrC[0]
-#                     C_p[j,k]=corrC[1]
-#             ## look at the best match from the 4 resulting matrices
-#             ## match indices (which g in rep(i) match the g's in rep0). Find the index of max in each column
-#             Ggroup=G_corr.argmax(axis=0)
-#             Gpgroup=G_p.argmin(axis=0)
-#             Cgroup=C_corr.argmax(axis=0)
-#             Cpgroup=C_p.argmin(axis=0)
-#             if all(Ggroup==Cgroup) and all(Ggroup==Cpgroup):
-#                 ## reorder the rep(i) G and C
-#                 G_new=G[:,Ggroup]
-#                 C_new=C[Ggroup,:]
-#                 Gf=Gf+G_new
-#                 Cf=Cf+C_new
-#             elif all(Ggroup==Cgroup) and not p_val:
-#                 ## reorder the rep(i) G and C
-#                 if len(np.unique(Ggroup))==len(Ggroup):
-#                     G_new=G[:,Ggroup]
-#                     C_new=C[Ggroup,:]
-#                     Gf=Gf+G_new
-#                     Cf=Cf+C_new
-#                 else:
-#                     tot=tot-1
-#                     print('Skipping rep'+str(i))
-#                     print('Multiple groups maped to a single one. Group assignments:')
-#                     print(Ggroup)
-#             else:
-#                 tot=tot-1
-#                 print('Skipping rep'+str(i))
-#                 print('Group mapping by G, C and pValue do not agree.')
-#                 print('G group:')
-#                 print(Ggroup)
-#                 print('C group:')
-#                 print(Cgroup)
-#                 print('Cp group:')
-#                 print(Cpgroup)
-
-#     ## divide the summation matrics by number of replicates
-#     Gf=Gf/float(tot)
-#     Cf=Cf/float(tot)
-#     G0.iloc[:,:]=Gf
-#     C0.iloc[:,:]=Cf
-#     mean={'G':G0,'C':C0}
-#     return mean
 
     

@@ -47,78 +47,105 @@ if __name__ == '__main__':
 ##### write a python script that runs nmf and prints out some results #####
 ## read in expression matrix
 
-print("Looking for Results_obj in out_dir...")
+print("Looking for Results_obj in out_dir...") ## look for all files with .pkl extensions
 res_objs=[result_obj for result_obj in os.listdir(in_dir) if result_obj.endswith(".pkl")]
 
+## load in the first object in the res_objs list
 Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[0])
+
+## see if the loaded object is empty (without a "results" attribute). If so, skip this object and read in the next until encountering a non-empty object.
+i=0
+while not hasattr(Results_all,"results"):
+    pritn(res_objs[i]+" doesn't contain any results.")
+    i=i+1
+    Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[i])
+
+## if the object doesn't contain results for all the K values specified in .Params.Ks, skip it and read in the next object in the list
+while len(Results_all.results.keys())!=len(Results_all.Params.Ks):
+    pritn(res_objs[i]+" doesn't contain all the results matching to its Ks parameters.")
+    i=i+1
+    Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[i])
+    ## check if the new object has a results attribute, if not, read in the next object in the list
+    while not hasattr(Results_all,"results"):
+        pritn(res_objs[i]+" doesn't contain any results.")
+        i=i+1
+        Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[i])
+
 params=list(Results_all.Params.keys())
 datasets=list(Results_all.data.keys())
+
+res_objs=res_objs[i:]
+
 if len(res_objs)>1:
     for result_obj in res_objs[1:]:
+        ## load in the next object in the res_objs list
         result_add=nmf_fxn.load_obj(in_dir+"/"+result_obj)
-        ## check if parameters agree
-        for par in params:
-            if par=="Ks":
-                Ks=list(set.union(set(Results_all.Params.Ks),set(result_add.Params.Ks)))
-                Results_all.Params.Ks=Ks
-            elif par=="rand_state":
-                try:
-                    rand_states=list(Results_all.Params.rand_state)+list(result_add.Params.rand_state)
-                    Results_all.Params.rand_state=rand_states
-                except TypeError:
-                    pass
-            elif par=="rep":
-                if Results_all.Params.rep != result_add.Params.rep:
-                    if set(Results_all.Params.Ks) == set(result_add.Params.Ks):
-                        Results_all.Params.rep=Results_all.Params.rep+result_add.Params.rep
-                    else:
-                        Results_all.Params.rep=None
-            else:
-                if Results_all.Params[par] != result_add.Params[par]:
-                    print("Error: parameters don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
-                    exit()
-        ## check if datasets agree
-        for dataset in datasets:
-            if type(Results_all.data[dataset]) != type(result_add.data[dataset]):
-                print("Error: datasets don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
-                exit()
-            else:
-                if Results_all.data[dataset] is not None:
-                    if np.array(Results_all.data[dataset]-result_add.data[dataset]).any():
-                        if dataset!="permuted":
-                            print("Error: datasets don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
-                            exit()
-        ## if all agree, integrate results
-        if hasattr(result_add,"permuted_results"):
-            add_permuted=True
-            if not hasattr(Results_all,"permuted_results"):
-                Results_all.permuted_results={}
-        else:
-            add_permuted=False
+        ## check if the object has results attribute
         if hasattr(result_add,"results"):
-            add=True
-            if not hasattr(Results_all,"results"):
-                Results_all.results={}
+            print(result_obj+" doesn't contain any results.")
         else:
-            add=False
-        if add:
-            for res_k in result_add.results.keys():
-                if res_k in Results_all.results.keys():
-                    rep_st=1+max([int(rep.split("p")[1]) for rep in Results_all.results[res_k].keys() if rep.startswith('rep')])
-                    for rep in result_add.results[res_k].keys():
-                        Results_all.results[res_k]["rep"+str(rep_st)]=copy.deepcopy(result_add.results[res_k][rep])
-                        rep_st+=1
+            ## check if the object has results for each K specified in its Params.Ks
+            if len(result_add.results.keys())!=len(result_add.Params.Ks):
+                print(result_obj+" doesn't contain all the results matching to its Ks parameters.")
+            else:
+                ## check if parameters agree and add in new parameters (such as new K values in .Params.Ks)
+                for par in params:
+                    if par=="Ks":
+                        Ks=list(set.union(set(Results_all.Params.Ks),set(result_add.Params.Ks)))
+                        Results_all.Params.Ks=sorted(Ks)
+                    elif par=="rand_state":
+                        try:
+                            rand_states=list(Results_all.Params.rand_state)+list(result_add.Params.rand_state)
+                            Results_all.Params.rand_state=rand_states
+                        except TypeError:
+                            pass
+                    elif par=="rep":
+                        if Results_all.Params.rep != result_add.Params.rep:
+                            if set(Results_all.Params.Ks) == set(result_add.Params.Ks):
+                                Results_all.Params.rep=Results_all.Params.rep+result_add.Params.rep
+                            else:
+                                Results_all.Params.rep=None ## should I change rep to an array or a list to match each K?
+                    else:
+                        if Results_all.Params[par] != result_add.Params[par]: ## for these parameters, it makes less sence to change them to a list that matches Ks.
+                            print("Error: parameters don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
+                            exit()
+                ## check if datasets agree
+                for dataset in datasets:
+                    if type(Results_all.data[dataset]) != type(result_add.data[dataset]): ## should change such that if some objects don't have a permuted dataset, ignore it and integrate the objects with real data.
+                        print("Error: datasets don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
+                        exit()
+                    else:
+                        if Results_all.data[dataset] is not None:
+                            if np.array(Results_all.data[dataset]-result_add.data[dataset]).any():
+                                if dataset!="permuted":
+                                    print("Error: datasets don't agreen between "+res_objs[0]+" and "+result_obj+". Cannot integrate Results.")
+                                    exit()
+                ## if all agree, integrate results
+                if hasattr(result_add,"permuted_results"):
+                    add_permuted=True
+                    if not hasattr(Results_all,"permuted_results"):
+                        Results_all.permuted_results={}
                 else:
-                    Results_all.results[res_k]=copy.deepcopy(result_add.results[res_k])
-        if add_permuted:
-            for res_k in result_add.permuted_results.keys():
-                if res_k in Results_all.permuted_results.keys():
-                    rep_st=1+max([int(rep.split("p")[1]) for rep in Results_all.permuted_results[res_k].keys() if rep.startswith('rep')])
-                    for rep in result_add.permuted_results[res_k].keys():
-                        Results_all.permuted_results[res_k]["rep"+str(rep_st)]=copy.deepcopy(result_add.permuted_results[res_k][rep])
-                        rep_st+=1
-                else:
-                    Results_all.permuted_results[res_k]=copy.deepcopy(result_add.permuted_results[res_k])
+                    add_permuted=False
+
+                ## adding results from result_add to results in Results_all
+                for res_k in result_add.results.keys():
+                    if res_k in Results_all.results.keys(): ## if there are results for the same K in the two objects, append the repeated runs in the new object to the ones in Results_all
+                        rep_st=1+max([int(rep.split("p")[1]) for rep in Results_all.results[res_k].keys() if rep.startswith('rep')])
+                        for rep in result_add.results[res_k].keys():
+                            Results_all.results[res_k]["rep"+str(rep_st)]=copy.deepcopy(result_add.results[res_k][rep])
+                            rep_st+=1
+                    else:
+                        Results_all.results[res_k]=copy.deepcopy(result_add.results[res_k])
+                if add_permuted:
+                    for res_k in result_add.permuted_results.keys():
+                        if res_k in Results_all.permuted_results.keys():
+                            rep_st=1+max([int(rep.split("p")[1]) for rep in Results_all.permuted_results[res_k].keys() if rep.startswith('rep')])
+                            for rep in result_add.permuted_results[res_k].keys():
+                                Results_all.permuted_results[res_k]["rep"+str(rep_st)]=copy.deepcopy(result_add.permuted_results[res_k][rep])
+                                rep_st+=1
+                        else:
+                            Results_all.permuted_results[res_k]=copy.deepcopy(result_add.permuted_results[res_k])
 
 file_name = out_dir+"/All_results_obj.pkl"
 expand=0
