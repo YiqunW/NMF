@@ -61,7 +61,7 @@ while not hasattr(Results_all,"results"):
     Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[i])
 
 ## if the object doesn't contain results for all the K values specified in .Params.Ks, skip it and read in the next object in the list
-while len(Results_all.results.keys())!=len(Results_all.Params.Ks):
+while len(Results_all.results.keys())!=len(list(Results_all.Params.Ks)):
     pritn(res_objs[i]+" doesn't contain all the results matching to its Ks parameters.")
     i=i+1
     Results_all=nmf_fxn.load_obj(in_dir+"/"+res_objs[i])
@@ -81,11 +81,11 @@ if len(res_objs)>1:
         ## load in the next object in the res_objs list
         result_add=nmf_fxn.load_obj(in_dir+"/"+result_obj)
         ## check if the object has results attribute
-        if hasattr(result_add,"results"):
+        if not hasattr(result_add,"results"):
             print(result_obj+" doesn't contain any results.")
         else:
             ## check if the object has results for each K specified in its Params.Ks
-            if len(result_add.results.keys())!=len(result_add.Params.Ks):
+            if len(result_add.results.keys())!=len(list(result_add.Params.Ks)):
                 print(result_obj+" doesn't contain all the results matching to its Ks parameters.")
             else:
                 ## check if parameters agree and add in new parameters (such as new K values in .Params.Ks)

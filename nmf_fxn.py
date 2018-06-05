@@ -290,7 +290,7 @@ def calc_consens(result_k,scl=True,M='C'):
         scl --> whether to scale each matrix before calculating the consensus matrix such that all components (module) have the same maximum value.
         M --> the matrices used for calculating the consensus matrix. Acceptable values: 'C', or 'G'. If M='C' and there was sub-sampling when running nmf, the function will find the constant cells among the repeated runs and build consensus matrix with only these cells.
     Returns:
-        A consensus matrix in form of a numpy matrix.
+        A consensus matrix in form of a 2-D numpy array.
     """
     #result_=copy.deepcopy(result_k)
     result_=result_k

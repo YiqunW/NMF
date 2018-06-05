@@ -1,15 +1,20 @@
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) > 1) stop("Usage: Rscript collect_tbls.R [DIR_TO_READ_AND_SAVE]")
 io_dir <- as.character(args[1])
+io_dir=paste0(io_dir,"/tables/")
 Ks_dir=list.dirs(io_dir,full.names = TRUE, recursive = FALSE)
+print(Ks_dir)
 Ks_all=unlist(lapply(Ks_dir, function(x) unlist(strsplit(x,"/"))[length(unlist(strsplit(x,"/")))]))
+print(Ks_all)
 Ks=Ks_all[grep("K=",Ks_all)]
 result_obj=list()
 if("scaled_data.csv" %in% Ks_all){
   result_obj[["scaled_data"]]=read.csv(paste0(Ks_dir,"/","scaled_data.csv"),row.names = 1)
+  print("Scaled dataset read.")
 }
 if("permuted_data.csv" %in% Ks_all){
   result_obj[["permuted_data"]]=read.csv(paste0(Ks_dir,"/","permuted_data.csv"),row.names = 1)
+  print("Permuted dataset read.")
 }
 for(K in Ks){
   print(paste0("Collecting results for ",K,"..."))

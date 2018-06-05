@@ -1,0 +1,12 @@
+init: nndsvd
+alpha: 2
+rand_state: None
+rep: 5
+scale: median
+verbose: True
+tol: 1e-06
+permute: True
+max_iter: 10000
+Ks: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+sub: None
+l1: 0.5

@@ -2,7 +2,7 @@
 ## Integrate objects from multiple jobs
 echo "Integrating results into a single .pkl file..."
 script_dir="./"
-in_dir="../example_results/"
+in_dir="../example_results_new/"
 out_dir="${in_dir}/integrated/"
 py_script="${script_dir}/integrate_objs.py"
 
