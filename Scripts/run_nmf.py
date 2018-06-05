@@ -30,7 +30,7 @@ if __name__ == '__main__':
     parser.add_argument('-tol','-tol', help='error tolerance for running nmf', default=1e-7)
     parser.add_argument('-num_rep','-rep', help='number of repeated runs of NMF with random initial conditions for each K', default=1)
     parser.add_argument('-sub_spl','-sub', help='number of cells for running NMF on a random subset of cells (values other than default not tested)', default=None)
-    parser.add_argument('-permute','-perm', help='whether to generate a randomly permuted matrix as control', default=True)
+    parser.add_argument('-permute','-perm', help='whether to generate a randomly permuted matrix as control. Can be True or False, or a path to a .txt/.csv file of a permuted dataset.', default=True)
     parser.add_argument('-prt_top_genes','-prt_top', help='whether to save tables of 30 top ranking genes and their weights', default=True)
     parser.add_argument('-init','-init', help='Initialization method for NMF. Default is nndsvdar (faster than nndsvda, which is better when sparseness is not desired). Could also use nndsvd (better for sparseness), or random.', default=None)
     parser.add_argument('-run_perm','-run_perm', help='Whether to perform NMF on a permuted dataset. Accepted arguments are True, False or "only"', default=False)
