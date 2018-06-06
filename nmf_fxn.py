@@ -69,14 +69,20 @@ def load_obj(name):
         filename=name
     else:
         filename=name+".pkl"
+    re_load=False
     with open(filename, 'rb') as f:
         try:
             obj=pickle.load(f)
         except:
-            obj=pickle.load(f,encoding='latin1')
-        return obj
+            re_load=True
+    if re_load:
+        with open(filename, 'rb') as f:
+            u = pickle._Unpickler(f)
+            u.encoding = 'latin1'
+            obj = u.load()
+            #obj=pickle.load(f,encoding='latin1')
+    return obj
     
-
 ## Define a function which, after nmf run, prints out the top n genes that defines each gene module
 def print_top_genes(G, n_top_genes = 30,component = None, prt= False, save_tbl=False):
     """
@@ -391,7 +397,7 @@ def consis_plt(con,fg_sz=[10,4],ylim1=None, ylim2=None, save=False,plot=False,lo
             pp.close()
     return mean_dev
 
-def calc_cophenet(con,method='average'):
+def calc_cophenet(con,method='ward'):
     """ 
     Parameters:
         con --> a consensus matrix (such as output from calc_consens).
@@ -889,7 +895,7 @@ def stability_tbl(results,Ks=None,stats=["inconsistency_G","inconsistency_C","co
                     cophe.append(np.nan)
         if "inconsistency_G" in stats:
             stats_tbl.loc["inconsistency_G"]=np.array(consis)
-        if "cophenetic_G":
+        if "cophenetic_G" in stats:
             stats_tbl.loc["cophenetic_G"]=np.array(cophe)
     if "inconsistency_C" in stats or "cophenetic_C" in stats:
         consis=[]
