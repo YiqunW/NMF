@@ -397,7 +397,7 @@ def consis_plt(con,fg_sz=[10,4],ylim1=None, ylim2=None, save=False,plot=False,lo
             pp.close()
     return mean_dev
 
-def calc_cophenet(con,method='ward'):
+def calc_cophenet(con,method='average'):
     """ 
     Parameters:
         con --> a consensus matrix (such as output from calc_consens).
