@@ -55,8 +55,10 @@ def save_obj(obj, name):
     else:
         filename=name+".pkl"
     with open(filename, 'wb') as f:
-        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-        #pickle.dump(obj, f)
+        try:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        except:
+            pickle.dump(obj, f)
 
 def load_obj(name):
     """
@@ -788,7 +790,7 @@ class nmf_reps:
             append_tbl=np.array([K_val,ratio12,rep_val])
             ratio_tbl=ratio_tbl.append(pd.DataFrame(append_tbl.T,columns=["K","ratio(rank1/rank2)","rep"]))
         ratio_tbl["K"]=pd.to_numeric(ratio_tbl["K"])
-        ratio_tbl["ratio(rank1/rank2)"]=pd.to_numeric(ratio_tbl["ratio(rank1/rank2)"])
+        ratio_tbl["ratio(rank1/rank2)"]=pd.to_numeric(ratio_tbl["ratio(rank1/rank2)"],errors='coerce')
         return(ratio_tbl)
 
     def mean_GC(self,K,reps_use=None,st=0):
