@@ -364,11 +364,12 @@ def consis_plt(con,fg_sz=[10,4],ylim1=None, ylim2=None, save=False,plot=False,lo
     con_M=np.array(con)
     if plot: 
         fig_size=np.array(fg_sz)
-    con_el=con_M.flatten()
+    #con_el=con_M.flatten()
     num_cell=con_M.shape[0]
-    ones=np.where(con_el==1)[0]
-    zeros=np.where(con_el==0)[0]
-    con_el_c=np.delete(con_el,ones[:num_cell]) ## delete the diagonal elements
+    #ones=np.where(con_el==1)[0]
+    #zeros=np.where(con_el==0)[0]
+    #con_el_c=np.delete(con_el,ones[:num_cell]) ## delete the diagonal elements
+    con_el_c=con_M[np.triu_indices(num_cell,1)] ## extract only upper triangle elements
     con_dev=abs(con_el_c-0.5)
     con_dev=abs(con_dev-0.5)
     mean_dev=np.mean(con_dev)
@@ -377,7 +378,7 @@ def consis_plt(con,fg_sz=[10,4],ylim1=None, ylim2=None, save=False,plot=False,lo
         plt.figure()
 
         plt.subplot(121)
-        plt.hist(con_el,bins=bins)
+        plt.hist(con_el_c,bins=bins)
         plt.title('Distribution of values \nin consensus matrix')
         plt.ylabel('Counts')
         if logyscale:
